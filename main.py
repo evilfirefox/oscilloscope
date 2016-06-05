@@ -15,6 +15,7 @@ class Oscilloscope:
 
     def __init__(self, master):
         self.device = HardwareInteraction(self.handle_serial)
+        self.device.connect(port='COM3');
 
         frame = Frame(master)
         frame.pack()
@@ -32,7 +33,8 @@ class Oscilloscope:
         self.canvas.draw()
 
     def handle_serial(self, data):
-        # append data here...
+        self.data_x.append([len(self.data_x) + 1])
+        self.data_y.append([data]);
         self.update_chart(self.data_x, self.data_y)
 
 

@@ -19,10 +19,10 @@ class HardwareInteraction:
         self.socket.baudrate = baudrate
         self.socket.timeout = timeout
         self.socket.open()
-        _thread.start_new(self.poll)
+        _thread.start_new(self.poll, ())
 
     def poll(self):
         while True:
             data = self.socket.readline()
             if data:
-                self.input_handler(data)
+                self.input_handler(data.decode('utf-8'))
