@@ -1,6 +1,5 @@
 from tkinter import Tk, Frame
-import _thread
-from serial import Serial
+from hw_interaction import HardwareInteraction
 
 import matplotlib
 from matplotlib.figure import Figure
@@ -10,16 +9,18 @@ matplotlib.use("TkAgg")
 
 
 class Oscilloscope:
-    data_x = [],
+    data_x = []
     data_y = []
+    device = 0
 
     def __init__(self, master):
+        self.device = HardwareInteraction(self.handle_serial)
+
         frame = Frame(master)
         frame.pack()
 
         self.chart = Figure(figsize=(5, 5), dpi=100)
         self.subplot = self.chart.add_subplot(1, 1, 1)
-        # self.subplot.plot([1, 2, 3, 4, 5], [4.9, 0, 4.9, 0, 4.9])
 
         self.canvas = FigureCanvasTkAgg(self.chart, frame)
         self.canvas.show()
@@ -29,6 +30,10 @@ class Oscilloscope:
         self.subplot.clear()
         self.subplot.plot(data_x, data_y)
         self.canvas.draw()
+
+    def handle_serial(self, data):
+        # append data here...
+        self.update_chart(self.data_x, self.data_y)
 
 
 root = Tk()
