@@ -1,4 +1,5 @@
-import pprint
+import sys
+import _thread
 from tkinter import Tk, Frame, Entry, Button, Label
 from tkinter.constants import W, E
 from hw_interaction import HardwareInteraction
@@ -43,7 +44,10 @@ class Oscilloscope:
         self.log_path.grid(row=1, column=1, sticky=W + E)
 
         self.start_button = Button(frame, text="Start", command=self.start_operations)
-        self.start_button.grid(row=2, column=0, columnspan=2, sticky=W + E)
+        self.start_button.grid(row=2, column=0, sticky=W + E)
+
+        self.start_button = Button(frame, text="Stop&close", command=self.stop_operations)
+        self.start_button.grid(row=2, column=1, sticky=W + E)
 
         self.chart = Figure(figsize=(5, 5), dpi=100)
         self.subplot = self.chart.add_subplot(1, 1, 1)
@@ -56,13 +60,18 @@ class Oscilloscope:
         self.device.connect(port=self.device_port.get())
         self.log_file = open(self.log_path.get(), 'a')
 
+    def stop_operations(self):
+        self.log_file.close()
+        sys.exit(0)
+
     def update_chart(self, data_x, data_y):
         self.subplot.clear()
         self.subplot.plot(data_x, data_y)
         self.canvas.draw()
 
     def handle_serial(self, data):
-        self.data_x.append(self.data_x[len(self.data_x) - 1] + 1)
+        index_max = self.data_x[len(self.data_x) - 1]
+        self.data_x.append(index_max + 1)
         self.data_y.append(float(data))
 
         if len(self.data_y) > self.DELTA_THRESHOLD:
@@ -70,12 +79,13 @@ class Oscilloscope:
             data_to_log = self.data_y[:half]
             self.data_y = self.data_y[half:]
             self.data_x = self.data_x[half:]
-            self.log_data(data_to_log=data_to_log)
+            _thread.start_new(self.log_data, (data_to_log,))
 
         self.update_chart(self.data_x, self.data_y)
 
     def log_data(self, data_to_log):
-        pass
+        for value in data_to_log:
+            self.log_file.write(str(value))
 
 
 root = Tk()
