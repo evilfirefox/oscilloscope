@@ -85,7 +85,7 @@ class Oscilloscope:
 
     def log_data(self, data_to_log):
         for value in data_to_log:
-            self.log_file.write(str(value))
+            self.log_file.write("{0}\n".format(str(value)))
 
 
 root = Tk()
