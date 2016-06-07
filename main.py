@@ -1,4 +1,5 @@
 import sys
+import pprint
 import _thread
 from tkinter import Tk, Frame, Entry, Button, Label
 from tkinter.constants import W, E
@@ -13,8 +14,8 @@ matplotlib.use("TkAgg")
 
 class Oscilloscope:
     DELTA_THRESHOLD = 50
-    data_x = [0]
-    data_y = [0]
+    data = {}
+    time_index = 0
     device = 0
     log_file = 0
     device_port = 0
@@ -57,35 +58,38 @@ class Oscilloscope:
         self.canvas.get_tk_widget().grid(row=5, column=0, columnspan=2)
 
     def start_operations(self):
-        self.device.connect(port=self.device_port.get())
+        self.device.connect(port=self.device_port.get(), baudrate=19200)
         self.log_file = open(self.log_path.get(), 'a')
 
     def stop_operations(self):
         self.log_file.close()
         sys.exit(0)
 
-    def update_chart(self, data_x, data_y):
+    def update_chart(self, data):
         self.subplot.clear()
-        self.subplot.plot(data_x, data_y)
+        self.subplot.plot(sorted(data.keys()), list(data.values()))
         self.canvas.draw()
 
     def handle_serial(self, data):
-        index_max = self.data_x[len(self.data_x) - 1]
-        self.data_x.append(index_max + 1)
-        self.data_y.append(float(data))
+        self.data[self.time_index] = float(data)
+        self.time_index += 1
 
-        if len(self.data_y) > self.DELTA_THRESHOLD:
-            half = int(len(self.data_y) / 2)
-            data_to_log = self.data_y[:half]
-            self.data_y = self.data_y[half:]
-            self.data_x = self.data_x[half:]
+        if len(self.data) > self.DELTA_THRESHOLD:
+            i = 0
+            data_to_log = {}
+            for k, v in self.data.items():
+                if i < self.DELTA_THRESHOLD:
+                    data_to_log[k] = v
+                i += 1
+            for k in data_to_log.keys():
+                del(self.data[k])
             _thread.start_new(self.log_data, (data_to_log,))
 
-        self.update_chart(self.data_x, self.data_y)
+        self.update_chart(self.data)
 
     def log_data(self, data_to_log):
-        for value in data_to_log:
-            self.log_file.write("{0}\n".format(str(value)))
+        for k, v in data_to_log.items():
+            self.log_file.write("{0}: {1}\n".format(str(k).zfill(10), str(v)))
 
 
 root = Tk()
